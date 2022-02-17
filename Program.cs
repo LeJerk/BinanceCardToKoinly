@@ -23,18 +23,13 @@ namespace BinanceCardToKoinly
             // Read excel from Binance
             using var binanceExcel = new ExcelPackage(new FileInfo(fileName: BINANCE_FILE));
             var binanceSheet = binanceExcel.Workbook.Worksheets["sheet1"];
-            int binanceStart = binanceSheet.Dimension.Start.Row;
+            int binanceStart = binanceSheet.Dimension.Start.Row + 1;
             int binanceEnd = binanceSheet.Dimension.End.Row;
 
             Dictionary<int, string> multiAssetTransactions = new Dictionary<int, string>();
 
             for (int row = binanceStart; row <= binanceEnd; row++)
             {
-                if (row == 1)
-                {
-                    continue;
-                }
-
                 // Set date
                 string[] dateParts = binanceSheet.Cells[row, 1].Text.Split(' ');
                 string[] clockParts = dateParts[3].Split(':');
