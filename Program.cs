@@ -23,10 +23,12 @@ namespace BinanceCardToKoinly
             // Read excel from Binance
             using var binanceExcel = new ExcelPackage(new FileInfo(fileName: BINANCE_FILE));
             var binanceSheet = binanceExcel.Workbook.Worksheets["sheet1"];
-            var binanceStart = binanceSheet.Dimension.Start;
-            var binanceEnd = binanceSheet.Dimension.End;
+            int binanceStart = binanceSheet.Dimension.Start.Row;
+            int binanceEnd = binanceSheet.Dimension.End.Row;
 
-            for (int row = binanceStart.Row; row <= binanceEnd.Row; row++)
+            Dictionary<int, string> multiAssetTransactions = new Dictionary<int, string>();
+
+            for (int row = binanceStart; row <= binanceEnd; row++)
             {
                 if (row == 1)
                 {
@@ -51,11 +53,42 @@ namespace BinanceCardToKoinly
                 // Set amount and currency
                 string[] assetUsed = binanceSheet.Cells[row,6].Text.Split(' ');
 
-                koinlySheet.Cells[row, 2].Value = $"-{assetUsed[1]}";
+                koinlySheet.Cells[row, 2].Value = $"-{assetUsed[1].Replace(";", "")}";
                 koinlySheet.Cells[row, 3].Value = assetUsed[0];
 
                 // Set description
                 koinlySheet.Cells[row, 4].Value = binanceSheet.Cells[row, 2].Value;
+
+                if (assetUsed.Length > 2)
+                {
+                    multiAssetTransactions.Add(multiAssetTransactions.Count, $"{transactionDate} UTC;-{assetUsed[3].Replace(";", "")};{assetUsed[2]};{binanceSheet.Cells[row, 2].Value}");
+                }
+
+                if (assetUsed.Length > 4)
+                {
+                    multiAssetTransactions.Add(multiAssetTransactions.Count, $"{transactionDate} UTC;-{assetUsed[5].Replace(";", "")};{assetUsed[4]};{binanceSheet.Cells[row, 2].Value}");
+                }
+
+                if (assetUsed.Length > 6)
+                {
+                    multiAssetTransactions.Add(multiAssetTransactions.Count, $"{transactionDate} UTC;-{assetUsed[7].Replace(";", "")};{assetUsed[6]};{binanceSheet.Cells[row, 2].Value}");
+                }
+
+                if (assetUsed.Length > 8)
+                {
+                    multiAssetTransactions.Add(multiAssetTransactions.Count, $"{transactionDate} UTC;-{assetUsed[9].Replace(";", "")};{assetUsed[8]};{binanceSheet.Cells[row, 2].Value}");
+                }
+            }
+
+            foreach (var transaction in multiAssetTransactions)
+            {
+                int newRowIndex = koinlySheet.Dimension.End.Row + 1;
+                string[] transParts = transaction.Value.Split(';');
+
+                koinlySheet.Cells[newRowIndex, 1].Value = transParts[0];
+                koinlySheet.Cells[newRowIndex, 2].Value = transParts[1];
+                koinlySheet.Cells[newRowIndex, 3].Value = transParts[2];
+                koinlySheet.Cells[newRowIndex, 4].Value = transParts[3];
             }
 
             koinlyExcel.SaveAs(new FileInfo(KOINLY_FILE));
